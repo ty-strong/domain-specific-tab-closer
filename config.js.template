@@ -1,0 +1,10 @@
+/**
+ * @file Configuration for the Tab Closer extension.
+ * INSTRUCTIONS:
+ * 1. Rename this file to "config.js".
+ * 2. Go to the Google Cloud Console and create a project.
+ * 3. Enable the "YouTube Data API v3".
+ * 4. Create an API Key and paste it below.
+ * IMPORTANT: This file is ignored by git and should NOT be committed to version control.
+ */
+const YOUTUBE_API_KEY = "YOUR_API_KEY_HERE";

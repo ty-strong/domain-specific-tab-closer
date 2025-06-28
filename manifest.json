@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Close Domain Tabs",
+  "version": "2.6",
+  "description": "Adds context menu items and a smart toolbar button to close tabs by domain or YouTube channel (including Shorts).",
+  "permissions": [
+    "tabs",
+    "contextMenus",
+    "activeTab",
+    "notifications",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": ["*://*.youtube.com/*", "https://www.googleapis.com/*"],
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
+  },
+  "background": {
+    "scripts": ["config.js", "background.js"]
+  },
+  "action": {
+    "default_icon": "icons/icon-48.png",
+    "default_title": "Close Tabs"
+  }
+}

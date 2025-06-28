@@ -1,0 +1,6 @@
+# Ignore the file containing the secret API key.
+config.js
+
+# Ignore common development files and directories.
+node_modules/
+.DS_Store
