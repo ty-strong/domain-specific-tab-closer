@@ -34,8 +34,8 @@ function getDomainFromUrl(urlString) {
  * Displays a desktop notification to the user.
  * @param {string} message The message to display in the notification body.
  */
-function showNotification(message) {
-  browser.notifications.create({
+async function showNotification(message) {
+  await browser.notifications.create({
     type: "basic", iconUrl: browser.runtime.getURL("icons/icon-48.png"),
     title: "Tab Closer", message: message,
   });
@@ -90,7 +90,7 @@ function isYouTubeContentPage(url) {
 async function fetchVideoDetails(videoIds) {
   // Pre-flight check for the API key to fail fast and provide a clear error.
   if (typeof YOUTUBE_API_KEY === 'undefined' || YOUTUBE_API_KEY === "YOUR_API_KEY_HERE") {
-    showNotification("Error: YouTube API key is missing or invalid. Please check config.js.");
+    await showNotification("Error: YouTube API key is missing or invalid. Please check config.js.");
     return null;
   }
   if (!videoIds || videoIds.length === 0) return [];
@@ -126,7 +126,7 @@ async function fetchVideoDetails(videoIds) {
         if (data.items) newlyFetchedDetails.push(...data.items);
       } catch (error) {
         console.error("Failed to fetch a chunk of video details:", error);
-        showNotification("Error fetching some data from YouTube API.");
+        await showNotification("Error fetching some data from YouTube API.");
       }
     }
     // 3. Update the cache with the newly fetched data.
@@ -157,10 +157,10 @@ async function closeTabsForDomain(domain) {
   if (!domain) return;
   const tabs = await browser.tabs.query({ url: `*://${domain}/*` });
   if (tabs.length > 0) {
-    browser.tabs.remove(tabs.map(t => t.id));
-    showNotification(`Closed ${tabs.length} tab(s) from ${domain}.`);
+    await browser.tabs.remove(tabs.map(t => t.id));
+    await showNotification(`Closed ${tabs.length} tab(s) from ${domain}.`);
   } else {
-    showNotification(`No open tabs found for domain: ${domain}.`);
+    await showNotification(`No open tabs found for domain: ${domain}.`);
   }
 }
 
@@ -209,10 +209,10 @@ async function closeTabsByChannel(targetChannelId, sourceTitle) {
   // Step 5: Close all collected tabs.
   const finalTabIds = Array.from(tabsToClose);
   if (finalTabIds.length > 0) {
-    browser.tabs.remove(finalTabIds);
-    showNotification(`Closed ${finalTabIds.length} tab(s) for channel: ${sourceTitle}.`);
+    await browser.tabs.remove(finalTabIds);
+    await showNotification(`Closed ${finalTabIds.length} tab(s) for channel: ${sourceTitle}.`);
   } else {
-    showNotification(`No open tabs found for channel: ${sourceTitle}.`);
+    await showNotification(`No open tabs found for channel: ${sourceTitle}.`);
   }
 }
 
@@ -231,12 +231,12 @@ async function getChannelIdAndClose(sourceUrl) {
             const channelId = videoDetails[0].snippet.channelId;
             const channelTitle = videoDetails[0].snippet.channelTitle;
             // Now that we have the official ID, start the main closing process.
-            closeTabsByChannel(channelId, channelTitle);
+            await closeTabsByChannel(channelId, channelTitle);
         }
     } else {
         // Converting a channel handle (e.g., @MKBHD) to a channel ID requires another API endpoint (Search).
         // For simplicity and to conserve API quota, we guide the user to a more reliable path.
-        showNotification("This feature works best when started from a video or Shorts page.");
+        await showNotification("This feature works best when started from a video or Shorts page.");
     }
 }
 
@@ -252,10 +252,10 @@ browser.action.onClicked.addListener(async (tab) => {
 
     // If on a relevant YouTube page, perform the YouTube action.
     if (url.hostname.includes("youtube.com") && isYouTubeContentPage(url)) {
-        getChannelIdAndClose(tab.url);
+        await getChannelIdAndClose(tab.url);
     } else {
         // Otherwise, perform the default action of closing by domain.
-        closeTabsForDomain(getDomainFromUrl(tab.url));
+        await closeTabsForDomain(getDomainFromUrl(tab.url));
     }
 });
 
@@ -289,14 +289,14 @@ browser.runtime.onInstalled.addListener(() => {
 /**
  * Handles clicks on any of our created context menu items.
  */
-browser.contextMenus.onClicked.addListener((info, tab) => {
+browser.contextMenus.onClicked.addListener(async (info, tab) => {
     const url = tab?.url || info.pageUrl;
     switch (info.menuItemId) {
         case "close-domain":
-            closeTabsForDomain(getDomainFromUrl(url));
+            await closeTabsForDomain(getDomainFromUrl(url));
             break;
         case "close-yt-channel":
-            getChannelIdAndClose(url);
+            await getChannelIdAndClose(url);
             break;
     }
 });
