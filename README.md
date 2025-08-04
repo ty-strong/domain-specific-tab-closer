@@ -17,8 +17,7 @@ A Firefox extension to close tabs for a specific domain, or automatically close 
 
 ## Usage
 
-- Use the extension popup or options to specify domains or YouTube channels for tab closing.
-- Tabs matching your criteria will be closed automatically or on demand.
+- Use the tab options when you right click to specify whether you want to close tabs from a particular domain or tabs from a specific YouTube channel.
 
 ## License
 
