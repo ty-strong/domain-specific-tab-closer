@@ -174,11 +174,11 @@ async function closeTabsByChannel(targetChannelId, sourceTitle) {
   if (!targetChannelId) return;
   let tabsToClose = new Set();
   
-  // Step 1: Find tabs that are on the channel's own pages (e.g., /channel/ID/videos).
+  // 1. Find tabs that are on the channel's own pages (e.g., /channel/ID/videos).
   const directChannelTabs = await browser.tabs.query({ url: `*://*.youtube.com/channel/${targetChannelId}*` });
   directChannelTabs.forEach(tab => tabsToClose.add(tab.id));
 
-  // Step 2: Find all open YouTube tabs to check if they are videos or Shorts.
+  // 2. Find all open YouTube tabs to check if they are videos or Shorts.
   const allYouTubeTabs = await browser.tabs.query({ url: "*://*.youtube.com/*" });
   const videoIdsToCheck = [];
   const tabsWithVideoIds = [];
@@ -191,10 +191,10 @@ async function closeTabsByChannel(targetChannelId, sourceTitle) {
     }
   }
 
-  // Step 3: Use our cache-aware helper to get details for all videos. This is the potentially slow part.
+  // 3. Use our cache-aware helper to get details for all videos. This is the potentially slow part.
   const videoDetails = await fetchVideoDetails(videoIdsToCheck);
 
-  // Step 4: Cross-reference the API results with our list of open tabs.
+  // 4. Cross-reference the API results with our list of open tabs.
   if (videoDetails) {
     videoDetails.forEach(video => {
       // If a video's channel ID matches our target...
@@ -206,7 +206,7 @@ async function closeTabsByChannel(targetChannelId, sourceTitle) {
     });
   }
 
-  // Step 5: Close all collected tabs.
+  // 5. Close all collected tabs.
   const finalTabIds = Array.from(tabsToClose);
   if (finalTabIds.length > 0) {
     await browser.tabs.remove(finalTabIds);
