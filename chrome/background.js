@@ -8,18 +8,18 @@ function createMenu() {
     });
 }
 
-function closeTabsFromDomain(activeTab) {
+async function closeTabsFromDomain(activeTab) {
     if (activeTab.url) {
         try {
             const targetDomain = new URL(activeTab.url).hostname;
 
-            chrome.tabs.query({ currentWindow: true }, (allTabs) => {
-                const idsToRemove = allTabs
-                    .filter(t => t.url && t.url.includes(targetDomain))
-                    .map(t => t.id);
-
+            const allTabs = await chrome.tabs.query({ currentWindow: true });
+            const idsToRemove = allTabs
+                .filter(t => t.url && t.url.includes(targetDomain))
+                .map(t => t.id);
+            if (idsToRemove.length > 0) {
                 chrome.tabs.remove(idsToRemove);
-            });
+            }
         } catch (e) {
             console.error("Invalid URL:", e);
         }
