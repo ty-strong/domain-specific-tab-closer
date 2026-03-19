@@ -42,22 +42,36 @@ async function closeTabsFromDomain(activeTab) {
  * Script injected into YouTube tabs to find the channel identifier
  */
 function getRawYouTubeId() {
-    // 1. Permanent ID from meta tag
+    // 1. The Primary Source: SEO/Metadata Layer
+    // This is found in the body, so it updates reliably during SPA page swaps.
+    const authorSpan = document.querySelector('span[itemprop="author"]');
+    const seoUrl = authorSpan?.querySelector('link[itemprop="url"]')?.href;
+    const seoName = authorSpan?.querySelector('link[itemprop="name"]')?.getAttribute('content');
+
+    // 2. Fallback 1: Meta Tag (Often undefined on navigation, but good for fresh loads)
     const metaId = document.querySelector('meta[itemprop="channelId"]')?.content;
 
-    // 2. Visible Channel Link (More reliable on SPAs)
-    const channelLink = document.querySelector('#upload-info a.yt-simple-endpoint')?.href;
+    // 3. Fallback 2: Visual UI (The "Owner" or "Reel" player area)
+    const uiLink = document.querySelector('#upload-info a.yt-simple-endpoint') ||
+        document.querySelector('ytd-reel-player-overlay-renderer #channel-info a') ||
+        document.querySelector('ytd-video-owner-renderer a');
 
-    // 3. Visible Channel Name (For the confirmation dialog)
-    const channelName = document.querySelector('#upload-info #channel-name a')?.innerText || "this channel";
+    const uiName = document.querySelector('#upload-info #channel-name a') ||
+        document.querySelector('ytd-reel-player-overlay-renderer #channel-name a') ||
+        document.querySelector('ytd-reel-player-header-renderer #channel-name');
+
+    // Data Selection logic
+    const channelLink = seoUrl || uiLink?.href;
+    const channelName = seoName || uiName?.innerText || "this channel";
 
     let id = metaId;
     if (!id && channelLink) {
+        // Regex to extract the raw identity (UC ID or @handle)
         const match = channelLink.match(/(?:\/channel\/|\/user\/|\/)(UC[a-zA-Z0-9_-]{22}|@[a-zA-Z0-9_-]+)/);
         id = match ? match[1] : channelLink.split('?')[0].replace(/\/$/, "");
     }
 
-    return { id, name: channelName };
+    return { id, name: channelName.trim() };
 }
 
 function confirmNuke(channelName) {
