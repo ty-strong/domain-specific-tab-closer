@@ -1,3 +1,6 @@
+/**
+ * Setup Context Menus
+ */
 function createMenu() {
     chrome.contextMenus.removeAll(() => {
         chrome.contextMenus.create({
@@ -5,7 +8,6 @@ function createMenu() {
             title: "Close all tabs from this domain",
             contexts: ["all"]
         });
-        // Only show this option if we are on a YouTube page
         chrome.contextMenus.create({
             id: "closeSameChannel",
             title: "Close all tabs from this YouTube Channel",
@@ -15,11 +17,15 @@ function createMenu() {
     });
 }
 
+/**
+ * Logic for Domain Closing (Toolbar Icon & Menu)
+ */
 async function closeTabsFromDomain(activeTab) {
     if (!activeTab.url) return;
     try {
         const targetDomain = new URL(activeTab.url).hostname;
         const allTabs = await chrome.tabs.query({ currentWindow: true });
+
         const idsToRemove = allTabs
             .filter(t => t.url && t.url.includes(targetDomain))
             .map(t => t.id);
@@ -32,80 +38,84 @@ async function closeTabsFromDomain(activeTab) {
     }
 }
 
-// Function to extract a clean identity (ID or Handle)
+/**
+ * Script injected into YouTube tabs to find the Channel Identifier
+ */
 function getRawYouTubeId() {
-    // 1. The ID is the gold standard
+    // 1. Permanent ID from meta tag
     const metaId = document.querySelector('meta[itemprop="channelId"]')?.content;
-    if (metaId) return metaId;
 
-    // 2. Fallback to the link under the video
+    // 2. Visible Channel Link (More reliable on SPAs)
     const channelLink = document.querySelector('#upload-info a.yt-simple-endpoint')?.href;
-    if (channelLink) {
-        // Extracts either the @handle or the UC... ID
+
+    // 3. Visible Channel Name (For the confirmation dialog)
+    const channelName = document.querySelector('#upload-info #channel-name a')?.innerText || "this channel";
+
+    let id = metaId;
+    if (!id && channelLink) {
         const match = channelLink.match(/(?:\/channel\/|\/user\/|\/)(UC[a-zA-Z0-9_-]{22}|@[a-zA-Z0-9_-]+)/);
-
-        // A cleaner way to handle the fallback
-        if (match) return match[1];
-
-        // If no regex match, at least strip off the "?v=..." part of a URL if it exists
-        return channelLink.split('?')[0].replace(/\/$/, "");
+        id = match ? match[1] : channelLink.split('?')[0].replace(/\/$/, "");
     }
-    return null;
+
+    return { id, name: channelName };
 }
 
-// Function to ask the user if they are sure
 function confirmNuke(channelName) {
     return confirm(`Are you sure you want to close all tabs from ${channelName}?`);
 }
 
+/**
+ * Logic for YouTube Channel Closing
+ */
 async function closeYouTubeChannelTabs(activeTab) {
-    // 1. Get the Channel ID and the visible Name
+    // Phase 1: Identify the target channel
     const results = await chrome.scripting.executeScript({
         target: { tabId: activeTab.id },
-        func: () => {
-            const id = (function() {
-                const metaId = document.querySelector('meta[itemprop="channelId"]')?.content;
-                if (metaId) return metaId;
-                const link = document.querySelector('#upload-info a.yt-simple-endpoint')?.href;
-                const match = link?.match(/(?:\/channel\/|\/user\/|\/)(UC[a-zA-Z0-9_-]{22}|@[a-zA-Z0-9_-]+)/);
-                return match ? match[1] : link;
-            })();
-            const name = document.querySelector('#upload-info #channel-name a')?.innerText || "this channel";
-            return { id, name };
-        }
+        func: getRawYouTubeId
     });
 
-    const { id: targetId, name: channelName } = results[0].result;
+    const { id: targetId, name: channelName } = results[0]?.result || {};
     if (!targetId) return;
 
-    // 2. Ask for confirmation
+    // Phase 2: Confirmation
     const conf = await chrome.scripting.executeScript({
         target: { tabId: activeTab.id },
         func: confirmNuke,
         args: [channelName]
     });
 
-    if (!conf[0].result) return; // User clicked 'Cancel'
+    if (!conf[0].result) return;
 
-    // 3. The Nuke
+    // Phase 3: Collects tabs to delete
     const allTabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
+    const idsToRemove = [];
+
     for (const tab of allTabs) {
-        if (tab.id === activeTab.id) continue;
         try {
             const check = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
                 func: getRawYouTubeId
             });
-            if (check[0]?.result === targetId) {
-                await chrome.tabs.remove(tab.id);
+
+            if (check[0]?.result?.id === targetId) {
+                idsToRemove.push(tab.id);
             }
-        } catch (e) { continue; }
+        } catch (e) {
+            continue; // Skip crashed or protected tabs
+        }
+    }
+
+    // Phase 4: Removes any tabs to be deleted
+    if (idsToRemove.length > 0) {
+        await chrome.tabs.remove(idsToRemove);
     }
 }
 
+/**
+ * Event Listeners
+ */
 chrome.runtime.onInstalled.addListener(createMenu);
 chrome.runtime.onStartup.addListener(createMenu);
-
 chrome.action.onClicked.addListener(closeTabsFromDomain);
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
