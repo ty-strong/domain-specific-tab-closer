@@ -1,5 +1,5 @@
 /**
- * Setup Context Menus
+ * Setup context menus
  */
 function createMenu() {
     chrome.contextMenus.removeAll(() => {
@@ -18,7 +18,7 @@ function createMenu() {
 }
 
 /**
- * Logic for Domain Closing (Toolbar Icon & Menu)
+ * Logic for domain closing (toolbar icon and menu)
  */
 async function closeTabsFromDomain(activeTab) {
     if (!activeTab.url) return;
@@ -39,7 +39,7 @@ async function closeTabsFromDomain(activeTab) {
 }
 
 /**
- * Script injected into YouTube tabs to find the Channel Identifier
+ * Script injected into YouTube tabs to find the channel identifier
  */
 function getRawYouTubeId() {
     // 1. Permanent ID from meta tag
@@ -65,7 +65,7 @@ function confirmNuke(channelName) {
 }
 
 /**
- * Logic for YouTube Channel Closing
+ * Logic for YouTube channel closing
  */
 async function closeYouTubeChannelTabs(activeTab) {
     // Phase 1: Identify the target channel
