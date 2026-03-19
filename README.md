@@ -21,6 +21,3 @@ Since this extension is in development, you can load it manually into any Chromi
 1.  Navigate to a site where you have many tabs open (e.g., YouTube).
 2.  **Either:** Click the extension icon in the browser toolbar.
 3.  **Or:** Right-click anywhere on the webpage and select **Close all tabs from this domain**.
-
-## ⚖️ License
-MIT
