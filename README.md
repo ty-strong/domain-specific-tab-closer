@@ -19,5 +19,5 @@ Since this extension is in development, you can load it manually into any Chromi
 
 ## How to Use
 1.  Navigate to a site where you have many tabs open (e.g., YouTube).
-2.  **Either:** Click the extension icon in the browser toolbar to close all tabs with the same domain as the current tab.
+2.  **Either:** Click the extension icon in the browser toolbar to close all tabs from the same domain as the current tab.
 3.  **Or:** Right-click anywhere on the webpage and select **Close all tabs from this domain** or **Close all tabs from this YouTube Channel** if you are on a YouTube page.
