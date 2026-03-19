@@ -1,9 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Domain Tab Closer",
-  "version": "1.3",
-  "permissions": ["tabs", "contextMenus"],
-  "action": {},
+  "version": "1.5",
+  "permissions": ["tabs", "contextMenus", "scripting"],
+  "host_permissions": ["*://*.youtube.com/*"],
+  "action": {
+    "default_title": "Click to close all tabs from this domain"
+  },
   "background": {
     "service_worker": "background.js"
   }
